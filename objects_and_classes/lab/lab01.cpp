@@ -1,123 +1,141 @@
 #include <iostream>
-#include <string>
 #include <sstream>
-#include <map>
-#include <algorithm>
+#include <string>
 #include <vector>
+#include <map>
+#include <set>
+#include <cctype>
 
 using std::map;
+using std::set;
 using std::string;
+using std::stringstream;
 using std::vector;
 
-int getSymbolIndexInStr(const string &str_val, const char &symbol);
-void removeSelectedSymbolFromStr(string &curr_str_val, const int &symbol_index);
-string str_tolower(string str_copy);
+bool endsWithPunctuation(const string &word);
+const set<string> getLettersMatchList(const char &curr_read_char, const vector<string> &words_collection);
 
 int main()
 {
-    map<char, vector<string>> char_str_occurrence;
+    string input_str;
+    std::getline(std::cin, input_str);
 
-    string text;
-    std::getline(std::cin, text);
-
-    std::stringstream str_stream(text);
-
-    vector<char> letters;
-    // reading letters until a dot is encountered
-    char curr_read_letter;
-    while (std::cin >> curr_read_letter && curr_read_letter != '.')
-    {
-        letters.push_back(curr_read_letter);
-    }
+    stringstream str_stream(input_str);
 
     string curr_str_val;
+    vector<string> words_collection;
     while (str_stream >> curr_str_val)
     {
-        // std::size_t dot_index_curr_str = curr_str_val.find('.');
-        // int dot_index_curr_str = curr_str_val.find('.');
-
-        int symbol_index = getSymbolIndexInStr(curr_str_val, '.');
-        removeSelectedSymbolFromStr(curr_str_val, symbol_index);
-
-        for (vector<char>::iterator curr_iter = letters.begin(); curr_iter != letters.end(); ++curr_iter)
+        // guard clause for empty string since string stream skips one spacing by default
+        if (curr_str_val.empty())
         {
-            char curr_char = (*curr_iter);
-            bool is_curr_char_lowercase = std::islower(curr_char);
-
-            char lower_char;
-            char upper_char;
-            if (is_curr_char_lowercase)
-            {
-                lower_char = curr_char;
-                upper_char = std::toupper(curr_char);
-            }
-            else
-            {
-                lower_char = std::tolower(curr_char);
-                upper_char = curr_char;
-            }
-
-            int index_lower = curr_str_val.find(lower_char);
-            int index_upper = curr_str_val.find(upper_char);
-
-            if (index_lower != -1 || index_upper != -1)
-            {
-                auto iter_insertion_res = char_str_occurrence.insert(std::pair<char, vector<string>>(curr_char, {curr_str_val}));
-
-                if (iter_insertion_res.second == false)
-                {
-                    iter_insertion_res.first->second.push_back(curr_str_val);
-                }
-            }
+            continue;
         }
+
+        stringstream str_stream_buffer;
+        for (int curr_index = 0; curr_index < curr_str_val.length(); curr_index++)
+        {
+            const char &curr_symbol = curr_str_val[curr_index];
+            bool is_symbol_alphabet =
+                std::isalpha(static_cast<unsigned char>(curr_symbol));
+
+            if (!is_symbol_alphabet)
+            {
+                break;
+            }
+
+            str_stream_buffer << curr_symbol;
+        }
+
+        words_collection.push_back(str_stream_buffer.str());
     }
 
-    // printing result
-    map<char, vector<string>>::iterator map_iter_counter = char_str_occurrence.begin();
-    while (map_iter_counter != char_str_occurrence.end())
+    char curr_read_char;
+    vector<char> occurrence_order;
+    while (std::cin >> curr_read_char && curr_read_char != '.')
     {
-        const char &curr_key = map_iter_counter->first;
-        const vector<string> &curr_val = map_iter_counter->second;
+        curr_read_char = std::tolower(curr_read_char);
+        occurrence_order.push_back(curr_read_char);
+    }
 
-        for (const string &curr_str : curr_val)
+    map<char, set<string>> dict;
+    vector<char>::iterator iter_counter;
+    for (iter_counter = occurrence_order.begin(); iter_counter != occurrence_order.end(); ++iter_counter)
+    {
+        const char &curr_letter_key = (*iter_counter);
+        const set<string> &matchlist = getLettersMatchList(curr_letter_key, words_collection);
+
+        std::pair<char, set<string>> curr_created_pair(curr_letter_key, matchlist);
+        dict.insert(curr_created_pair);
+    }
+
+    for (const char &curr_occurred_char_key : occurrence_order)
+    {
+        const set<string> &value_coll = dict[curr_occurred_char_key];
+        if (value_coll.empty())
         {
-            std::cout << curr_str << " ";
+            std::cout << "---" << std::endl;
+            continue;
+        }
+
+        for (const string &curr_word : dict[curr_occurred_char_key])
+        {
+            std::cout << curr_word << " ";
         }
 
         std::cout << std::endl;
-
-        ++map_iter_counter;
     }
 
     return 0;
 }
 
-int getSymbolIndexInStr(const string &str_val, const char &symbol)
+bool endsWithPunctuation(const string &word)
 {
-    int symbol_index = str_val.find(symbol);
-
-    return symbol_index;
-}
-
-void removeSelectedSymbolFromStr(string &curr_str_val, const int &symbol_index)
-{
-    if (symbol_index == -1)
+    if (word.empty())
     {
-        return;
+        return false;
     }
 
-    curr_str_val.erase(symbol_index, 1);
+    const string punctuation_symbols = ".,?!";
+
+    return punctuation_symbols.find(word.back()) != string::npos;
 }
 
-string str_tolower(string str_copy)
+const set<string> getLettersMatchList(const char &curr_read_char, const vector<string> &words_collection)
 {
-    std::transform(str_copy.begin(), str_copy.end(), str_copy.begin(),
-                   // static_cast<int(*)(int)>(std::tolower)         // wrong
-                   // [](int c){ return std::tolower(c); }           // wrong
-                   // [](char c){ return std::tolower(c); }          // wrong
-                   [](unsigned char c)
-                   { return std::tolower(c); } // correct
-    );
+    // since curr_read_char will always be lower case char;
+    // bool is_upper_char = std::isupper(static_cast<unsigned int>(curr_read_char));
+    /*
+    char char_mask;
 
-    return str_copy;
+    if (is_upper_char)
+    {
+        char_mask = std::tolower(curr_read_char);
+    }
+    else
+    {
+        char_mask = std::toupper(curr_read_char);
+    }
+    */
+
+    char char_mask = std::toupper(curr_read_char);
+
+    set<string> letters_matchlist;
+    for (int i = 0; i < words_collection.size(); i++)
+    {
+        const string &curr_word = words_collection[i];
+
+        int pos_index = curr_word.find(curr_read_char);
+        int mask_index = curr_word.find(char_mask);
+
+        // guard clause == neither curr char or mask(upper or lower variant) are present in curr string
+        if (pos_index == -1 && mask_index == -1)
+        {
+            continue;
+        }
+
+        letters_matchlist.insert(curr_word);
+    }
+
+    return letters_matchlist;
 }
