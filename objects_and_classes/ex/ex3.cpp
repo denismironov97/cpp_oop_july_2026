@@ -3,8 +3,11 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <iomanip>
 
 using std::string;
+
+void setPrintDigitPrecision(int digits);
 
 class Sale
 {
@@ -12,7 +15,7 @@ private:
     string city_name;
     string product_type;
     double price_per_unit;
-    int quantity;
+    double quantity;
 
 public:
     // def c-tor
@@ -20,7 +23,7 @@ public:
     // c-tor
     // params c-tor
     Sale(const string &city_name, const string &product_type,
-         const double &price_per_unit, const int &quantity);
+         const double &price_per_unit, const double &quantity);
     // copy-c-tor
     Sale(const Sale &obj_data);
     // assignment operator overload
@@ -30,13 +33,13 @@ public:
     const string &getterCityName() const;
     const string &getterProductType() const;
     const double &getterPricePerUnit() const;
-    const int &getterQuantity() const;
+    const double &getterQuantity() const;
 
-    void setterProductQuantity(const int &value_variable);
+    void setterProductQuantity(const double &value_variable);
 };
 
 Sale::Sale(const string &city_name, const string &product_type,
-           const double &price_per_unit, const int &quantity)
+           const double &price_per_unit, const double &quantity)
 {
     this->city_name = city_name;
     this->product_type = product_type;
@@ -80,12 +83,12 @@ const double &Sale::getterPricePerUnit() const
     return this->price_per_unit;
 }
 
-const int &Sale::getterQuantity() const
+const double &Sale::getterQuantity() const
 {
     return this->quantity;
 }
 
-void Sale::setterProductQuantity(const int &value_variable)
+void Sale::setterProductQuantity(const double &value_variable)
 {
     this->quantity = value_variable;
 }
@@ -123,8 +126,7 @@ void ProfitTracker::insertSaleToProfitTracker(const Sale &obj_inst)
         Sale *ptr_existing_obj = this->getExistingProduct(kvp_value, obj_inst);
         if (ptr_existing_obj != nullptr)
         {
-            ptr_existing_obj->setterProductQuantity(ptr_existing_obj->getterQuantity() +
-                                                    obj_inst.getterQuantity());
+            ptr_existing_obj->setterProductQuantity(ptr_existing_obj->getterQuantity() + obj_inst.getterQuantity());
         }
         else
         {
@@ -178,15 +180,14 @@ void ProfitTracker::printProfitData()
 
 int main()
 {
-    // ProfitTracker *ptr_profit_tracker = new ProfitTracker();
+    ProfitTracker *ptr_profit_tracker = new ProfitTracker();
 
     int num_lines;
     std::cin >> num_lines;
+    std::cin.ignore();
 
     for (int idx = 0; idx < num_lines; idx++)
     {
-        std::cout << idx << std::endl;
-
         string curr_data_line;
         std::getline(std::cin, curr_data_line);
         std::stringstream str_stream(curr_data_line);
@@ -194,10 +195,37 @@ int main()
         string curr_city_name;
         string curr_product_type;
         double curr_price_per_unit;
-        int curr_quantity;
+        double curr_quantity;
 
         str_stream >> curr_city_name >> curr_product_type >> curr_price_per_unit >> curr_quantity;
+
+        Sale *ptr_sale_inst = new Sale(curr_city_name, curr_product_type, curr_price_per_unit, curr_quantity);
+        // Sale sale_obj(curr_city_name, curr_product_type, curr_price_per_unit, curr_quantity);
+
+        ptr_profit_tracker->insertSaleToProfitTracker(*ptr_sale_inst);
+        // ptr_profit_tracker->insertSaleToProfitTracker(sale_obj);
+
+        delete ptr_sale_inst;
+        ptr_sale_inst = nullptr;
     }
 
+    setPrintDigitPrecision(2);
+    ptr_profit_tracker->printProfitData();
+
+    // removing pointers
+    delete ptr_profit_tracker;
+    ptr_profit_tracker = nullptr;
+
     return 0;
+}
+
+void setPrintDigitPrecision(int digits)
+{
+    // approach 1
+    //  #include <iomanip>
+    std::cout << std::fixed << std::setprecision(digits);
+
+    // approach 2
+    //  std::cout.setf(std::ios::fixed);
+    //  std::cout.precision(digits);
 }
